@@ -6,10 +6,15 @@
     {
       "id": "example",
       "name": "示例解析器",
-      "description": "仅用于验证索引收录流程，不做真实解析",
+      "description": "演示 DownVid 插件协议：仅解析 example.com，用于确认收录、安装与更新流程是否正常",
       "repo": "yxxbc/downvid-plugin-example",
       "author": "yxxbc",
-      "sites": [],
+      "sites": [
+        "example.com",
+        "example.org"
+      ],
+      "icon": "🧩",
+      "version": "0.2.0",
       "added": "2026-11-10"
     }
   ]
