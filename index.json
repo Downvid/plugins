@@ -2,5 +2,15 @@
   "$schema": "./index.schema.json",
   "version": 1,
   "updated": "2026-11-10",
-  "plugins": []
+  "plugins": [
+    {
+      "id": "example",
+      "name": "示例解析器",
+      "description": "仅用于验证索引收录流程，不做真实解析",
+      "repo": "yxxbc/downvid-plugin-example",
+      "author": "yxxbc",
+      "sites": [],
+      "added": "2026-11-10"
+    }
+  ]
 }
