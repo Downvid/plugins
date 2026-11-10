@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DownVid plugin index",
+  "type": "object",
+  "required": ["version", "plugins"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "const": 1,
+      "description": "索引格式版本。应用只认它认识的版本，遇到更高版本会提示更新应用而不是瞎读。"
+    },
+    "updated": { "type": "string", "description": "最后更新日期（YYYY-MM-DD），仅供人看。" },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "repo"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+            "description": "插件唯一标识，小写字母数字与连字符。必须与插件目录名一致。"
+          },
+          "name": { "type": "string", "description": "显示名。" },
+          "description": { "type": "string", "description": "一句话说明（中文）。" },
+          "repo": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+            "description": "插件源码仓库 owner/name。代码留在作者自己的仓库，本索引不托管。"
+          },
+          "author": { "type": "string" },
+          "sites": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "支持站点的域名（仅用于展示与搜索）。"
+          },
+          "added": { "type": "string", "description": "收录日期（YYYY-MM-DD）。" }
+        }
+      }
+    }
+  }
+}
