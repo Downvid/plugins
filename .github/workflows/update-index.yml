@@ -1,0 +1,81 @@
+name: 自动收录插件
+
+# 扫描 GitHub 上打了 downvid-plugin topic 的仓库，校验后更新 index.json。
+#
+# ## 为什么定时跑
+#
+# 收录的瓶颈不该是人。作者在自己仓库打一个 topic 声明「我是 DownVid 插件」，
+# 这里定期把它捡进索引；校验失败的原因写进运行日志，作者据此修。
+#
+# ## 为什么不放在 push 触发
+#
+# 索引仓库平时没有代码改动，push 几乎不发生；而新插件是随时出现的。
+#
+# ## 只写索引，不碰插件代码
+#
+# 本工作流只提交 index.json。插件代码留在作者自己的仓库——一旦经过本仓库，
+# README 里那句「插件不是本项目组成部分」就不成立了。
+
+on:
+  schedule:
+    # 每天一次。频率再高也没用：GitHub 搜索有索引延迟，且无 token 时配额很紧
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只报告不写入'
+        type: boolean
+        default: false
+      topic:
+        description: '扫描的 topic'
+        required: false
+        default: downvid-plugin
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-plugin-index
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 检出索引仓库
+        uses: actions/checkout@v7
+
+      - name: 取收录脚本
+        # 脚本住在主仓库：它是逻辑，不是索引数据的一部分。
+        # 固定 ref 而不是 main：主仓库改脚本时不该让索引悄悄跟着变。
+        run: |
+          curl -fsSL --retry 3 --max-time 60 \
+            -o /tmp/update-plugin-index.mjs \
+            https://raw.githubusercontent.com/Downvid/downvid/main/scripts/update-plugin-index.mjs
+
+      - name: 扫描并更新索引
+        env:
+          # 用仓库自带的 token 提高配额；无 token 时扫描几十个仓库很容易撞限流
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLUGIN_INDEX_DIR: ${{ github.workspace }}
+          INPUT_TOPIC: ${{ inputs.topic }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ -n "$INPUT_TOPIC" ]; then args+=(--topic "$INPUT_TOPIC"); fi
+          if [ "$DRY" = "true" ]; then args+=(--dry-run); fi
+          node /tmp/update-plugin-index.mjs "${args[@]}"
+
+      - name: 提交变更
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          if git diff --quiet index.json; then
+            echo "索引无变化"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          git commit -m "chore(index): 自动收录插件（$(date -u +%Y-%m-%d)）"
+          git push
